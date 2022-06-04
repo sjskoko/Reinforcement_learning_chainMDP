@@ -3,10 +3,6 @@ from gym import spaces
 import numpy as np
 
 
-#ChainMDP_YB refers to test implementation of yubeen
-
-class ChainMDP_YB(gym.Env):
-
 class ChainMDP(gym.Env):
     """Chain MDP
     The environment consists of a chain of N states and the agent always starts in state s2,
