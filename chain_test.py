@@ -45,6 +45,7 @@ while True:
     s_, r, t = env.step(action)
     print(s_, r, t)
     cum_reward += r
+    s = s_
     if t == 18:
         break
 print(f"total reward: {cum_reward}")
