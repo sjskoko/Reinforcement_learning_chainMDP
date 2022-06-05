@@ -15,28 +15,30 @@ class ChainMDP(gym.Env):
     def __init__(self, n):
         self.n = n
         self.state = 1  # start at s2
-        self.action_space = spaces.Discrete(2)
-        self.observation_space = spaces.Discrete(self.n)
-        self.max_nsteps = n + 8
+        self.action_space = spaces.Discrete(2) # left or right
+        self.observation_space = spaces.Discrete(self.n) # 0 ~ n-1 index의 observations_space 존재
+        self.max_nsteps = n + 8 #?
 
     def step(self, action):
         assert self.action_space.contains(action)
-        v = np.arange(self.n)
-        reward = lambda s, a: 1.0 if (s == (self.n - 1) and a == 1) else (0.001 if (s == 0 and a == 0) else 0)
+        v = np.arange(self.n) #[0,1,2, ... , n-1]
+        reward = lambda s, a: 1.0 if (s == (self.n - 1) and a == 1) else (0.001 if (s == 0 and a == 0) else 0) # a == 1 : right
         is_done = lambda nsteps: nsteps >= self.max_nsteps
 
         r = reward(self.state, action)
-        if action:    # left
+        if action:    # right
             if self.state != self.n - 1:
                 self.state += 1
-        else:   # right
+        else:   # left
             if self.state != 0:
                 self.state -= 1
         self.nsteps += 1
-        return (v <= self.state).astype('float32'), r, is_done(self.nsteps), None
+        #return (v <= self.state).astype('float32'), r, is_done(self.nsteps), None #step에 대한 action을 왜 이렇게 주지? ([간곳까지 1], reward, is_done, None
+        return self.state, r, self.nsteps
 
     def reset(self):
         v = np.arange(self.n)
         self.state = 1
         self.nsteps = 0
-        return (v <= self.state).astype('float32')
+        #return (v <= self.state).astype('float32') # reset시 1번 state로, nsteps 바꾸고
+        return self.state
