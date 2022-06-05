@@ -17,5 +17,6 @@ action = 1
 while not done:    
     action = agent.action()
     ns, reward, done, _ = env.step(action)
+    print(reward)
     cum_reward += reward
 print(f"total reward: {cum_reward}")

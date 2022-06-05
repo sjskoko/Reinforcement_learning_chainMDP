@@ -1,3 +1,6 @@
+
+
+
 class agent():
     
     def __init__(self):
@@ -6,4 +9,4 @@ class agent():
     
     def action(self):
         
-        return 1
+        return 0
