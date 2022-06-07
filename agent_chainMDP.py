@@ -13,7 +13,7 @@ def solve_tabular_continuing_PI(P, R, gamma, max_iter):
     s_idx = np.arange(num_s)
     
     ones = np.eye(num_s)
-    pi = np.zeros(num_s, dtype=np.int)
+    pi = np.zeros(num_s, dtype=np.int32)
     Q = None
     
     P_R = np.einsum('ijk, ijk -> ij', P, R)
