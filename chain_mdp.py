@@ -34,7 +34,7 @@ class ChainMDP(gym.Env):
                 self.state -= 1
         self.nsteps += 1
         #return (v <= self.state).astype('float32'), r, is_done(self.nsteps), None #step에 대한 action을 왜 이렇게 주지? ([간곳까지 1], reward, is_done, None
-        return self.state, r, self.nsteps
+        return self.state, r, is_done(self.nsteps), self.nsteps
 
     def reset(self):
         v = np.arange(self.n)

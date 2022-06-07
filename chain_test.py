@@ -20,16 +20,16 @@ agent_params = {'gamma'            : 0.9,
                 'sa_list'          : sa_list}
 agent = agent(agent_params)
 
-done = False
 cum_reward = 0.0
 # always move right left: 0, right: 1
 # action = 1
 for episode in range(100):
     s = env.reset()
-    for tau in range(18):
+    done = False
+    while not done:
         a = agent.take_action(s, 0)
         # Step environment
-        s_, r, t = env.step(a)
+        s_, r, done, t = env.step(a)
         agent.observe([t, s, a, r, s_])
         agent.update_after_step(10, True)
         # Update current state
@@ -37,12 +37,12 @@ for episode in range(100):
 
 s = env.reset()
 
-while True: 
+done = False
+while not done: 
     action = agent.take_action(s, 0)
-    s_, r, t = env.step(action)
+    s_, r, done, t = env.step(action)
     print(s_, r, t)
     cum_reward += r
     s = s_
-    if t == 18:
-        break
+
 print(f"total reward: {cum_reward}")
