@@ -33,12 +33,15 @@ class ChainMDP(gym.Env):
             if self.state != 0:
                 self.state -= 1
         self.nsteps += 1
-        #return (v <= self.state).astype('float32'), r, is_done(self.nsteps), None #step에 대한 action을 왜 이렇게 주지? ([간곳까지 1], reward, is_done, None
-        return self.state, r, is_done(self.nsteps), self.nsteps
+
+        #return (v <= self.state).astype('float32'), r, is_done(self.nsteps),  None
+        #modify return value (doesn't need list for state value) & get nsteps
+	return self.state, r, is_done(self.nsteps), self.nsteps
 
     def reset(self):
         v = np.arange(self.n)
         self.state = 1
         self.nsteps = 0
         #return (v <= self.state).astype('float32') # reset시 1번 state로, nsteps 바꾸고
-        return self.state
+        #modify return value to state
+	return self.state

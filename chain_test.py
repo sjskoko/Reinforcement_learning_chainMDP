@@ -6,10 +6,13 @@ env = ChainMDP(10)
 s = env.reset()
 
 """ Your agent"""
+
 sa_list = []
+
 for i in range(env.n):
-    for j in [0,1]:
+    for j in range(2):
         sa_list.append((i, j))
+
 agent_params = {'gamma'            : 0.9,
                 'kappa'            : 1.0,
                 'mu0'              : 0.0,
@@ -18,25 +21,34 @@ agent_params = {'gamma'            : 0.9,
                 'beta'             : 3.0,
                 'max_iter'         : 100,
                 'sa_list'          : sa_list}
+
 agent = agent(agent_params)
 
-cum_reward = 0.0
 # always move right left: 0, right: 1
 # action = 1
-for episode in range(100):
-    s = env.reset()
-    done = False
-    while not done:
-        a = agent.take_action(s, 0)
-        # Step environment
-        s_, r, done, t = env.step(a)
-        agent.observe([t, s, a, r, s_])
-        agent.update_after_step(10, True)
-        # Update current state
-        s = s_
 
+#Code below is used for training the agent
+
+def training(k):
+   for episode in range(k):
+       s = env.reset()
+       done = False
+
+       while not done:
+           a = agent.take_action(s, 0)
+           # Step environment
+           s_, r, done, t = env.step(a)
+           agent.observe([t, s, a, r, s_])
+           agent.update_after_step(10, True)
+           # Update current state
+           s = s_ 
+
+#training for 1000 episodes
+training(1000)
+
+
+cum_reward = 0.0
 s = env.reset()
-
 done = False
 while not done: 
     action = agent.take_action(s, 0)
