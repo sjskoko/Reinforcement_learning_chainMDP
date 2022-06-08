@@ -7,6 +7,7 @@ s = env.reset()
 
 """ Your agent"""
 
+#default parameters
 sa_list = []
 
 for i in range(env.n):
@@ -22,6 +23,7 @@ agent_params = {'gamma'            : 0.9,
                 'max_iter'         : 100,
                 'sa_list'          : sa_list}
 
+#initialize agent
 agent = agent(agent_params)
 
 # always move right left: 0, right: 1
@@ -50,6 +52,7 @@ training(1000)
 cum_reward = 0.0
 s = env.reset()
 done = False
+
 while not done: 
     action = agent.take_action(s, 0)
     s_, r, done, t = env.step(action)
