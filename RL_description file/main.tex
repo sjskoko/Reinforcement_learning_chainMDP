@@ -40,7 +40,7 @@ Initialize agent by calling agent.
 \begin{lstlisting}[language=Python]
 agent = agent(agent_params).
 \end{lstlisting}
-\section{Traning method}
+\section{Training method}
 \begin{flushleft}
 Below is the code used in training for k episodes. \ Just modify number in training(k) for training for k episodes. 
 \end{flushleft}
@@ -65,7 +65,57 @@ def training(k):
             
 \end{lstlisting}
 
+\section{Performance Evaluation}
 
+As it is difficult to provide explicit parameters, performance can be evaluated after training 1000 episodes with function in section 3. After training, evaluation for 50 episodes can be done with code below.
+
+\begin{lstlisting}
+
+total_reward = 0
+
+for episode in range(test_length):  #test_length = 50 in this case
+    cum_reward = 0.0
+    done = False
+    s = env.reset()
+    
+    while not done: 
+        action = agent.take_action(s, 0)
+        s_, r, done, t = env.step(action)
+        cum_reward += r
+        s = s_
+    total_reward += cum_reward
+        
+return total_reward/test_length
+\end{lstlisting}
+
+\section{Sample Efficiency}
+
+Our method does not have weights, therefore sample efficiency can be evaluated similarly as performance. While training 1000 episodes, rewards can be evaluated in each episode. Code is given below. 
+
+\begin{lstlisting}
+reward = []
+
+for episode in range(episode_length):
+    
+    s = env.reset()
+    done = False
+    cum_reward = 0
+    
+    while not done:
+        a = agent.take_action(s, 0)
+        # Step environment
+        s_, r, done, t = env.step(a)
+        agent.observe([t, s, a, r, s_])
+        agent.update_after_step(10, True)
+        # Update current state
+        s = s_
+        cum_reward += r
+    reward.append(cum_reward)
+
+return reward
+\end{lstlisting}
+\noindent
+In above reward array, $i^{th}$ component of reward contains reward of $i-1^{th}$ episode. 
 
 \bibliographystyle{unsrt}%Used BibTeX style is unsrt
 \bibliography{ref}
