@@ -22,7 +22,7 @@ def evaluate_performance(team_number, seeds, env_str, env_kwargs):
 
         env = Env(**env_kwargs)
         
-        agent_instance = Agent()
+        agent_instance = Agent(nState=env.observation_space.n, nAction=env.action_space.n)
         agent_instance.load_weights() 
 
         pf = calculate_pf(episodes, env, agent_instance)
@@ -50,8 +50,7 @@ def evaluate_sample_efficiency(team_number, seeds, env_str, env_kwargs):
         torch.manual_seed(seed)
 
         env = Env(**env_kwargs)
-        agent_instance = Agent()
-
+        agent_instance = Agent(nState=env.observation_space.n, nAction=env.action_space.n)
         se = calculate_se(episodes, env, agent_instance)
         se_list.append(se)
     
