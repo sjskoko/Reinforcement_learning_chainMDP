@@ -36,10 +36,8 @@ class ChainMDP(gym.Env):
 
         return (v <= self.state).astype('float32'), r, is_done(self.nsteps),  None
 
-
     def reset(self):
         v = np.arange(self.n)
         self.state = 1
         self.nsteps = 0
         return (v <= self.state).astype('float32') # reset시 1번 state로, nsteps 바꾸고
-
