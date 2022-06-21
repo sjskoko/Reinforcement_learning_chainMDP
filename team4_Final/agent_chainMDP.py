@@ -8,7 +8,6 @@ from tqdm import tqdm
 import logging
 import math
 
-
 class FeatureNet(nn.Module): #from state vector, extract feature with 1d-convolution network
     
     def __init__(self, n_states, num_channels=1):
@@ -79,15 +78,14 @@ class memoryDataset(object):
         if n_ensemble==1:
             self.bernoulli_prob = 1
 
-        self.subset = namedtuple('Transition', ('state', 'action', 'reward', 'done', 'life', 'terminal', 'mask'))
+        self.subset = namedtuple('Transition', ('state', 'action', 'reward', 'done',  'mask'))
 
-    def push(self, state, action, next_state, reward, done, life, terminal):
+    def push(self, state, action, next_state, reward, done):
         state = np.array(state)
         action = np.array(action)
         reward = np.array(reward)
         next_state = np.array(next_state)
         done = np.array([done])
-        life = np.array([life])
         terminal = np.array([terminal])
         mask = np.random.binomial(1, self.bernoulli_prob, self.n_ensemble)
 
@@ -105,26 +103,141 @@ class memoryDataset(object):
         reward = torch.tensor(np.stack(batch.reward), dtype = torch.float)
         next_state = torch.tensor(np.stack(batch.next_state), dtype = torch.float)
         done = torch.tensor(np.stack(batch.next_state), dtype=torch.float)
-        life = torch.tensor(np.stack(batch.life), dtype = torch.float)
+        #life = torch.tensor(np.stack(batch.life), dtype = torch.float)
         terminal = torch.tensor(np.stack(batch.mask), dtype = torch.float)
-        batch = self.subset(state, action, next_state, reward, done, life, terminal, mask)
+        batch = self.subset(state, action, next_state, reward, done, mask)#, life, terminal)
 
         return batch
 
-class Update(object):
 
-    """
-    Perform an update step between a DQN and a target DQN
-    """
+class DQNSolver():
 
-    def __init__(self, dqn, target_dqn):
+    def __init__(self, nState, nAction, n_ensemble=10, env):
 
-        self.dqn = dqn
-        self.target_dqn = target_dqn
+        self.env = env
+        self.discount = 0.99
+        self.nState = nState
+        self.nAction = nAction
+        self.action_space = np.range(self.nAction)
+        self.max_steps = 18
+        self.memory = memoryDataset(maxlen= 10, n_ensemble= n_ensemble, bernoulli_prob = bernoulli_prob)
+        self.lr = 0.1
+        self.optimizer = optim.Adam(params=self.policy_model.parameters(), lr=self.lr)
+        self.n_ensemble = n_ensemble
+        self.policy_model = build_model()
+        self.target_model = build_model()
+    #choose action
+    def choose_action(self, header_number:int=None, epsilon=None):
+        if epsilon is not None:
+            if np.random.random() <= epsilon:
+                return self.env.action_space.sample()
+            else:
+                with torch.no_grad():
+                    state = torch.tensor(history.get_state(), dtype=torch.float).unsqueeze(0).to()
+                    if header_numver is not None:
+                        action = self.target_model(state, header_number).cpu()
+                        return int(action.max(1).indices.numpy())
+                    else:
+                        actions = self.target_model(state)
+                        actions = [int(action.cpu().max(1).indices.numpy()) for action in actions]
+                        actions = Counter(actions)
+                        action = actions.most_common(1)[0][0]
+                        return action
+        else:
+            with torch.no_grad():
+                state = torch.tensor(history.get_state(), dtype=torch.float).unsqueeze(0).to()
+                if header_number is not None:
+                    action = self.policy_model(state, header_number).cpu()
+                    return int(action.max(1).indices.numpy())
+                else:
+                    actions = self.policy_model(state)
+                    actions = [int(action.cpu().max(1).indices.numpy()) for action in actions]
+                    actions = Counter(actions)
+                    action = actions.most_common(1)[0][0]
+                    return action
+    #def get_epsilon -> get epsilon increasing by time
+    # update weight
+    def replay(self, batch_size):
+
+        self.optimizer.zero_grad()
+        batch = self.memory.sample(batch_size)
+        state = batch.state.to()
+        action = batch.action.to()
+        next_state = batch.next_state.to()
+        reward = batch.reward
+        reward = reward.type(torch.bool).type(torch.float).to(self.device)
+        done = batch.done.to()
+        mask = batch.mask.to()
+
+        with torch.no_grad():
+            next_state_action_values = self.policy_model(next_state)
+        state_action_values = self.policy_model(state)
+
+        total_loss = []
+        for head_num in range(self.n_ensemble):
+            total_used = torch.sum(maks[:, head_num])
+            if total_used > 0.0:
+                next_state_value = torch.max(next_state_action_values[head_num], dim = 1).values.view(-1, 1)
+                reward = reward.view(-1, 1)
+                target_state_value = torch.stack([reward + (self.discount * next_state_value), reward], dim = 1).squeeze().gather(1, terminal)
+                state_action_value = state_action_values[head_num].gather(1, action)
+                loss = F.smooth_l1_loss(state_action_value, target_state_value, reduction='none')
+                loss = mask[:, head_num] * loss
+                loss = torch.sum(loss/total_used)
+                total_loss.append(loss)
+        
+        if len(total_loss) > 0:
+            total_loss = sum(total_loss)/self.n_ensemble
+            total_loss.backward()
+            self.optimizer.step()
+
+    def build_model(self):
+          return EnsembleNet(self.n_ensemble, self.nState, self.nAction, 1) #1 = num_channels
+
+    def train(self, num_episodes):
+        tau = 100
+        heads = list(range(self.n_ensemble))
+        active_head = heads[0]
+
+
+        for ite in range(num_episodes):
+            
+            s = self.env.reset()
+            done = False
+            rsum = 0
+
+            while not done:
+                step_count += 1
+                action = self.choose_action(active_head, self.get_epsilon(step))
+                next_state, reward, done _ = self.env.step(action)
+                self.memory.push(state, action, next_state, reward, done)
+                    
+                if self.memory.__len__ > initialize:
+                   self.replay(self.batch_size)
+
+                if step_count % tau == 1:
+                    self.target_model.load_state_dict(self.policy_model.state_dict()) #transfer weight
+
+
+            np.random.shuffle(heads)
+            active_head = heads[0]
+
+
+        state = self.env.reset()
+        done = False
+        train_score = 0
+        train_length = 0
+        last_life = 0
+        terminal = True
+
+    def test(self):
+
+        
+
 
 class agent():
 
-    def __init__(self, nState , nAction, history_size, network_builder, replay_memory, num_heads, **kwargs):
+    def __init__(self, nState , nAction, network_builder, replay_memory, num_heads, **kwargs):
 
         self.nAction = nAction
         self.history_size = history_size
@@ -138,5 +251,8 @@ class agent():
         #Discount factor & minibatch size
         self.discount_factor = kwargs.get('discount_factor', 0.99)
         self.minibatch_size = kwargs.get('minibatch_size', 32)
-
-
+        if kwargs.get('mode') == 'train':
+            DQNSolver.train()
+        else:
+            agent.test()
+            
