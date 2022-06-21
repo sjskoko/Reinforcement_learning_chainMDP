@@ -1,52 +1,33 @@
 from chain_mdp import ChainMDP
-from agent_chainMDP import agent
+from agent_chainMDP_new import agent
 
 # recieve 1 at rightmost state and recieve small reward at leftmost state
 env = ChainMDP(10)
 s = env.reset()
 
-""" Your agent"""
-
-#default parameters
-sa_list = []
-
-for i in range(env.n):
-    for j in range(2):
-        sa_list.append((i, j))
-
-agent_params = {'gamma'            : 0.9,
-                'kappa'            : 1.0,
-                'mu0'              : 0.0,
-                'lamda'            : 4.0,
-                'alpha'            : 3.0,
-                'beta'             : 3.0,
-                'max_iter'         : 100,
-                'sa_list'          : sa_list}
-
-#initialize agent
-agent = agent(agent_params)
-
-# always move right left: 0, right: 1
-# action = 1
-
-#Code below is used for training the agent
+agent = agent(10, 2)
 
 def training(k):
    for episode in range(k):
        s = env.reset()
        done = False
 
+       cum_reward = 0
        while not done:
-           a = agent.take_action(s, 0)
-           # Step environment
-           s_, r, done, t = env.step(a)
-           agent.observe([t, s, a, r, s_])
-           agent.update_after_step(10, True)
-           # Update current state
-           s = s_ 
+            action = agent.action(s)
+            ns, reward, done, _ = env.step(action)
+            cum_reward += reward
+            
+            #####################
+            # If your agent needs to update the weights at every time step, complete your update process in this area.
+            agent.observe(s, action, ns, reward, done)
+            agent.update_after_step()
 
+            #####################
+            s = ns
+       print(episode, cum_reward)
 #training for 1000 episodes
-training(1000)
+training(10)
 
 
 cum_reward = 0.0
@@ -54,10 +35,11 @@ s = env.reset()
 done = False
 
 while not done: 
-    action = agent.take_action(s, 0)
-    s_, r, done, t = env.step(action)
-    print(s_, r, t)
-    cum_reward += r
-    s = s_
+    action = agent.action(s)
+    ns, reward, done, _ = env.step(action)
+    cum_reward += reward
+    print(s, action, reward)
+    cum_reward += reward
+    s = ns
 
 print(f"total reward: {cum_reward}")
